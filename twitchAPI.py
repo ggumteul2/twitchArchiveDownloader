@@ -19,10 +19,14 @@ def getTSURL(url: str) -> tuple[str, int, str, str, str, list[str]]:
         sys.exit(0)
     req = requests.get(f'https://api.twitch.tv/helix/videos?id={vid_id}', headers={"Authorization":f"Bearer {app_token}", "Client-Id":f"{client_id}"})
     json_data = req.json()
-    thumbnail_url = json_data["data"][0]["thumbnail_url"]
-    title = json_data["data"][0]["title"]
-    date = json_data["data"][0]["created_at"].split("T")[0]
-    channel_name = json_data["data"][0]["user_name"]
+    try:
+        thumbnail_url = json_data["data"][0]["thumbnail_url"]
+        title = json_data["data"][0]["title"]
+        date = json_data["data"][0]["created_at"].split("T")[0]
+        channel_name = json_data["data"][0]["user_name"]
+    except IndexError:
+        print("Network Error")
+        sys.exit(0)
 
     if thumbnail_url == "https://vod-secure.twitch.tv/_404/404_processing_%{width}x%{height}.png":
         print("This video is still on processing")
