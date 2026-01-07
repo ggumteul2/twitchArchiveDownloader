@@ -1,4 +1,5 @@
-It's the safe mode of twitchArchiveDownloader which is for pc that does not supports languages which are not English
+It's the standard version of twitchArchiveDownloader which is for pc that support languages not only English
+If your pc does not supports languages that are not English, please use the safe version(https://github.com/ggumteul2/twitchArchiveDownloader-safe-version)
 
 
 1. Install Python
