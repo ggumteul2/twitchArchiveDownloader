@@ -26,12 +26,13 @@ archive_id = url.split("/videos/")[1].split("?")[0]
 #名前を修正
 downloader = fn.TSFilesDownloader(
     end_num=end_num,
-    name=archive_id,
+    name=title,
     url=ts_tamplet_url,
     dir=os.getcwd(),
     muted=muted,
     lim=15,
     date=date,
-    channel_name=channel_name
+    channel_name=channel_name,
+    id = archive_id
 )
 downloader.download()

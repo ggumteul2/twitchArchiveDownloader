@@ -13,7 +13,16 @@ from tqdm import tqdm
 def nameConvert(name: str):
     if name is None:
         return ""
-    return re.sub(r'[^0-9a-zA-Z._-]', '_', name)
+    if '\\' or '/' or ':' or '*' or '?' or '"' or '<' or '>' or '|' in name:
+        name = name.replace('\\', '_')
+        name = name.replace('/', '_')
+        name = name.replace(':', '_')
+        name = name.replace('*', '_')
+        name = name.replace('?', '_')
+        name = name.replace('<', '_')
+        name = name.replace('>', '_')
+        name = name.replace('|', '_')
+    return name
 
 def makeFolder(name: str, dir: str):
     if os.path.isdir(f"{dir}/{name}"):
@@ -36,6 +45,7 @@ class TSFilesDownloader:
         url: str,
         dir: str,
         muted: list,
+        id: str,
         lim: int = 5,
         start_num: int = 0,
         date=None,
@@ -43,6 +53,7 @@ class TSFilesDownloader:
     ):
         self.end_num = end_num
         self.start_num = start_num
+        self.name = name
         self.url = url
         self.dir = dir
         self.lim = lim
@@ -50,13 +61,14 @@ class TSFilesDownloader:
         self.date = date
         self.channel_name = channel_name
         self.muted = muted
+        self.id = id
         self.ts = list()
 
         # ==== フォルダ名を「日付_配信ID」に固定 ====
         safe_date = self.date.replace("-", "") if self.date else datetime.now().strftime("%Y%m%d")
-        self.name = f"{safe_date}_{name}"
+        self.safe_name = f"{safe_date}_{id}"
 
-        makeFolder(self.name, self.dir)
+        makeFolder(self.safe_name, self.dir)
 
         # TS番号リスト作成
         for i in range(start_num, end_num + 1):
@@ -66,14 +78,13 @@ class TSFilesDownloader:
                 continue
             ts_text = f"{ts_text}\n{i}"
         # 途中再開チェック
-        if os.path.isfile(f"{self.dir}/{self.name}/{end_num}.ts"):
-            self.concat()
+        if os.path.isfile(f"{self.dir}/{self.safe_name}/{end_num}.ts"):
             return
         
         #임시파일 생성
-        if os.path.isfile(f"{dir}/{self.name}/temp.txt"):
+        if os.path.isfile(f"{dir}/{self.safe_name}/temp.txt"):
             self.ts = list()
-            with open(f"{dir}/{self.name}/temp.txt", "r") as f:
+            with open(f"{dir}/{self.safe_name}/temp.txt", "r") as f:
                 ts = f.readlines()
                 for index, value in enumerate(ts):
                     value = int(value)
@@ -87,7 +98,7 @@ class TSFilesDownloader:
             return
         self.pbar = tqdm(range(start_num, end_num + 1), desc="Processing", unit="ts files")
         try:
-            with open(f"{dir}/{self.name}/temp.txt", "w") as f:
+            with open(f"{dir}/{self.safe_name}/temp.txt", "w") as f:
                 f.write(ts_text)
         except PermissionError:
             print("insufficient privileges. Shutting down the program")
@@ -96,7 +107,7 @@ class TSFilesDownloader:
             print(f'An unexpected error occurred: {e}. Shutting down the program')
 
     async def downloadFile(self, num: int):
-        file_path = f"{self.dir}/{self.name}/{num}.ts"
+        file_path = f"{self.dir}/{self.safe_name}/{num}.ts"
 
         if await aiofiles.os.path.isfile(file_path):
             await aiofiles.os.remove(file_path)
@@ -120,10 +131,10 @@ class TSFilesDownloader:
                 continue
             ts_text = f"{ts_text}\n{value}"
         if ts_text == "":
-            async with aiofiles.open(f"{self.dir}/{self.name}/temp.txt", "w") as f:
+            async with aiofiles.open(f"{self.dir}/{self.safe_name}/temp.txt", "w") as f:
                 pass
         else:
-            async with aiofiles.open(f"{self.dir}/{self.name}/temp.txt", "w") as f:
+            async with aiofiles.open(f"{self.dir}/{self.safe_name}/temp.txt", "w") as f:
                 await f.write(ts_text)
 
     
@@ -144,6 +155,9 @@ class TSFilesDownloader:
         self.concat()
 
     def download(self):
+        if os.path.isfile(f"{self.dir}/{self.safe_name}/{self.end_num}.ts"):
+            self.concat()
+            return
         asyncio.run(self.downloadTSFiles())
 
     def concat(self):
@@ -154,25 +168,25 @@ class TSFilesDownloader:
             videoName += f"[{self.date}] "
         videoName += f"{self.name}.mkv"
 
-        concat_path = f"{self.dir}/{self.name}/concat.txt"
+        concat_path = f"{self.dir}/{self.safe_name}/concat.txt"
 
         with open(concat_path, "w", encoding="utf-8") as f:
             for i in range(self.start_num, self.end_num + 1):
-                path = f"\'{self.dir}/{self.name}\'/{i}.ts"
+                path = f"\'{self.dir}/{self.safe_name}\'/{i}.ts"
                 f.write(f"file {path}\n")
 
         for i in range(self.start_num, self.end_num + 1):
             if f"{i}-unmuted.ts" in self.muted:
                 continue
             ts_hasAudio = f"{i}.ts"
-            ts_hasAudio = f"{self.dir}/{self.name}/{ts_hasAudio}"
+            ts_hasAudio = f"{self.dir}/{self.safe_name}/{ts_hasAudio}"
             break
         
         for muted_ts in self.muted:
             ts_muted = muted_ts.split("-")[0]
-            process_and_match_stream(f"{self.dir}/{self.name}/{ts_muted}.ts", f"{self.dir}/{self.name}/{ts_muted}-unmuted.ts", ts_hasAudio)
-            os.remove(f"{self.dir}/{self.name}/{ts_muted}.ts")
-            os.rename(f"{self.dir}/{self.name}/{ts_muted}-unmuted.ts", f"{self.dir}/{self.name}/{ts_muted}.ts")
+            process_and_match_stream(f"{self.dir}/{self.safe_name}/{ts_muted}.ts", f"{self.dir}/{self.safe_name}/{ts_muted}-unmuted.ts", ts_hasAudio)
+            os.remove(f"{self.dir}/{self.safe_name}/{ts_muted}.ts")
+            os.rename(f"{self.dir}/{self.safe_name}/{ts_muted}-unmuted.ts", f"{self.dir}/{self.safe_name}/{ts_muted}.ts")
 
         
         
@@ -187,7 +201,7 @@ class TSFilesDownloader:
 
         delete_folder = input("Do you want to delete temporary folders? (y/n) >> ")
         if delete_folder == "y":
-            shutil.rmtree(f"{self.dir}/{self.name}")
+            shutil.rmtree(f"{self.dir}/{self.safe_name}")
 
 
 def get_reference_audio_info(ref_file):
