@@ -124,18 +124,18 @@ class TSFilesDownloader:
                         await file.write(chunk)
 
         self.pbar.update(1)
-        ts_text = ""            
+        ts_text = ""
+        if not self.ts:
+            async with aiofiles.open(f"{self.dir}/{self.safe_name}/temp.txt", "w") as f:
+                return          
         for index, value in enumerate(self.ts):
             if index == 0:
+                ts_text = ""
                 ts_text = value
                 continue
             ts_text = f"{ts_text}\n{value}"
-        if ts_text == "":
-            async with aiofiles.open(f"{self.dir}/{self.safe_name}/temp.txt", "w") as f:
-                pass
-        else:
-            async with aiofiles.open(f"{self.dir}/{self.safe_name}/temp.txt", "w") as f:
-                await f.write(ts_text)
+        async with aiofiles.open(f"{self.dir}/{self.safe_name}/temp.txt", "w") as f:
+            await f.write(ts_text)
 
     
     

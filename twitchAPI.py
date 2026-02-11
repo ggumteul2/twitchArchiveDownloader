@@ -4,7 +4,7 @@ import re
 import functions as fn
 import json
 
-app_token = "s5498lg7h36kk5ml7f7jgw180c9rp2"
+app_token = "21foed8wvd7149vws5r7rbbqja8fjf"
 client_id = "u1azns9tgoo4qkrtaj95mi4jkyj1dy"
 
 def getTSURL(url: str) -> tuple[str, int, str, str, str, list[str]]:
@@ -65,7 +65,15 @@ def getLastestArchiveURL(username: str) -> str:
         sys.exit(0)
     return video_id
 
+def checkToken():
+    req = requests.get("https://id.twitch.tv/oauth2/validate", headers={"Authorization":f"Bearer {app_token}"})
+    data = req.json()
+    if data["status"] == 401:
+        print("aaaaaaaaaaaaa")
+    req = requests.post("https://id.twitch.tv/oauth2/revoke", data=f"client_id={client_id}&token={app_token}")
+    print(req)
+    req = requests.post(f"https://id.twitch.tv/oauth2/token?client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials")
+    print(req.text)
+
 if __name__ == "__main__":
-    full_url = input("Please enter url if Twitch archive (https://www.twitch.tv/videos/~)\n>> ")
-    ts_url, end_num, channel_name, date, title = getTSURL(full_url)
-    print(f"{ts_url}\n{end_num}\n{channel_name}\n{date}\n{title}")
+    checkToken()
