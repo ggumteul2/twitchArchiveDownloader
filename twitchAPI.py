@@ -6,6 +6,7 @@ import json
 
 app_token = "21foed8wvd7149vws5r7rbbqja8fjf"
 client_id = "u1azns9tgoo4qkrtaj95mi4jkyj1dy"
+client_secret = "17a85o4r2q4ybjs9tclrcykmjgdt9b"
 
 def getTSURL(url: str) -> tuple[str, int, str, str, str, list[str]]:
     try:
@@ -30,8 +31,12 @@ def getTSURL(url: str) -> tuple[str, int, str, str, str, list[str]]:
         print("This video is still on processing")
         sys.exit(0)
     match = re.compile("https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/[^/\t\n\r\f\v]*/").match(thumbnail_url)
+    
+    if re.compile("https://static-cdn.jtvnw.net/cf_vods/d2nvs31859zcd8").match(thumbnail_url) != None:
+        match = re.compile("https://static-cdn.jtvnw.net/cf_vods/d2nvs31859zcd8/[^/\t\n\r\f\v]*/").match(thumbnail_url)
+    
     if match == None:
-        print("Incorrect video")
+        print(f"Incorrect video! \n {thumbnail_url}")
         sys.exit(0)
 
     keyword = thumbnail_url.split("/")[5]
